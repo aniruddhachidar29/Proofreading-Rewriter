@@ -5,16 +5,14 @@ from gensim.models import Word2Vec
 from sklearn.decomposition import PCA
 from matplotlib import pyplot
 import numpy
-import json
 import string
-# from pattern3.en import conjugate, lemma
 import urllib.request
 import re
 
 word = "run"
 synonym = "enemy"
 
-iitb_lingo_words=['machau','craxx','infi','scope','lingo','ditch','pain','tum-tum','lukkha','enthu','huga','mugging','farra','ghati','junta','freshie','sophie']
+iitb_lingo_words=['machau','craxx','infi','scope','lingo','ditch','pain','tum-tum','lukkha','enthu','haga','mugging','farra','ghati','junta','freshie','sophie']
 iitb_lingo_meanings=['rocking','cracked','infinite','scopeless','language','ditch','problem','bus','free','enthusiasm','blundered','studying','FR','local_resident','public','freshmen','sophomore']
 iitb_lingo_dictionary={}
 for i in range(len(iitb_lingo_words)):
@@ -56,6 +54,17 @@ def i_s(p):
     return iss
     pass
 
+def final_synonyms(broke_para):
+	global word_sugg
+	global trigram_freq
+	output = {}
+	processes_sentence = []
+	for i in range(len(broke_para)):
+        get_synonyms_sentence(broke_para[i],output)
+	processes_sentence = []
+	trigram_freq = {}
+	word_sugg = {}
+	return output
 
 # define training dat
 # sentences = [['this', 'is', 'the', 'first', 'sentence', 'for', 'word2vec'],
