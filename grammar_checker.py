@@ -85,8 +85,8 @@ def alters(word,tag):
 	elif(s=="DT"):
 		return articles_list
 
-#processes = []
-limit = 1.7
+processes = []
+limit = 1.9
 def suggs(list_of_words, indt, tag):
 	if (tag not in ['DT', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ','HVD','HVG','HVN','HVZ','HV','BE','BER','BEZ','BED','BEDZ','BEG','BEM','BEN','DOD','DO','DOZ','WDT','WP$','WPO','WPS','WQL','WRB']):
 		return []
@@ -100,13 +100,13 @@ def suggs(list_of_words, indt, tag):
 			new_tri = tri[:]
 			new_tri[tloc] = repl
 			string_tri = ' '.join(new_tri)
-			r = get_frq(string_tri)
-			# process = threading.Thread(tloc=get_frq, args=(string_tri, ))
-			# process.setDaemon(True)
-			# process.start()
-			# processes.append(process)
-	# for process in processes:
-	# 	process.join()
+			#r = get_frq(string_tri)
+			process = threading.Thread(target=get_frq, args=(string_tri, ))
+			process.setDaemon(True)
+			process.start()
+			processes.append(process)
+	for process in processes:
+		process.join()
 	for tri, tloc in trigrams:
 		freq = {}
 		for repl in alternative_list:
@@ -123,15 +123,15 @@ def suggs(list_of_words, indt, tag):
 				score[key] += freq[key]
 			else:
 				score[key] = freq[key]
-	#processes = []
+	processes = []
 	result = sorted(score, key = lambda x: score[x], reverse = True)
 	return [i.lower() for i in filter(lambda x: (score[x] != 0) and x.lower() != list_of_words[indt] and score[x] > limit * score[list_of_words[indt].lower()], result)]
 
 def adj_trigrams(list_of_words, indt,tag):
 	res = []
 	if(tag[0:2]=='VB'):
-		pref = list_of_words[max(0, indt - 2) : indt + 1]
-		res.append([pref, len(pref) - 1])
+		pref = list_of_words[max(0, indt - 2) : indt + 2]
+		res.append([pref, len(pref) - 2])
 	else:
 		nbd = list_of_words[max(0, indt - 1) : indt + 2]
 		if(indt+2>len(list_of_words)):
