@@ -3,6 +3,7 @@ import time
 # from nltk.corpus import words
 # from itertools import imap, ifilter
 import re
+import pickle
 
 from nltk.tokenize import sent_tokenize, word_tokenize
 mistake = "zebr hmework what waiter"
@@ -49,7 +50,10 @@ def levenshtein(s, t):
                levenshtein(s[:-1], t[:-1]) + cost])
     return res
 
-
+global_arr=[]
+c=0
+with open('bktree', 'rb') as f:
+    dist=pickle.load(f)
 
 class BKTree:
     def __init__(self, distfn, words):
@@ -66,7 +70,11 @@ class BKTree:
 
     def _add_word(self, parent, word):
         pword, children = parent
-        d = self.distfn(word, pword)
+        # d = self.distfn(word, pword)
+        global c
+        d=dist[c]
+        c=c+1
+        # global_arr.append(d)
         if d in children:
             self._add_word(children[d], word)
         else:
