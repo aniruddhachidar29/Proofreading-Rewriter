@@ -9,6 +9,11 @@ import string
 import urllib.request
 import re
 import pickle
+import urllib
+import requests
+import json
+from pattern.en import conjugate, lemma
+from nltk import word_tokenize, pos_tag
 
 word = "run"
 synonym = "enemy"
@@ -34,7 +39,7 @@ def similarity(a,b):
 trigram_freq = {}
 word_sugg = {}
 
-def syn(word):
+def synn(word):
     synonyms = []
     for syn in wordnet.synsets(word):
     	for l in syn.lemmas():
@@ -44,6 +49,38 @@ def syn(word):
     return synonyms
 
     pass
+
+def synonyms(word):
+	verb_form = None
+	if is_verb(word):
+		verb_form = conjugated_alias(word)
+		word = lemma(word)
+	synonym = synn(word)
+	if not verb_form:
+		return synonym
+	res = []
+	for syn in synonym:
+		new_syn = conjugate(syn, verb_form)
+		res.append(new_syn)
+	return set(res)
+
+def is_verb(word):
+	tag_list = ['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']
+	word_tag = tag_words([word])[0][1]
+	if word_tag in tag_list:
+		return True
+	return False
+
+def conjugated_alias(word):
+	possible_aliases = ["inf", "1sg", "2sg", "3sg", "pl", "part","p", "1sgp", "2sgp", "3gp", "ppl", "ppart"]
+	base = lemma(word)
+	for alias in possible_aliases:
+		if conjugate(base, alias) == word:
+			return alias
+
+def tag_words(list_of_words):
+	tagged_words = pos_tag(list_of_words)
+	return tagged_words
 
 def i_s(p):
     sentences = re.split('[.,?!]', p);
@@ -72,14 +109,27 @@ def final_synonyms(broke_para):
 	word_sugg = {}
 	return output
 
-def invalid(words):
+def valid(word):
+    if (word.lower() == 'i'):
+    	return False
+    tag = tag_words([word])[0][1]
+    tag_list = ['JJ', 'JJR', 'JJS', 'RB', 'RBR', 'RBS', 'NN', 'NNS', 'NNP', 'NNPS']
+    if tag in tag_list:
+    	return True
+    if is_verb(word):
+    	word = lemma(word)
+    	lex_list = ['be', 'do', 'have', 'can', 'could', 'may', 'might', 'must', 'shall', 'should', 'will', 'would']
+    	if word in lex_list:
+    		return False
+    	else:
+    		return True
     return False
 
 def sentence_syms(sentence, output):
 	global word_sugg
 	words = [word for word, i in sentence]
 	for i in range(len(sentence)):
-		if (words[i] == "" or invalid(words[i])):
+		if (words[i] == "" or not valid(words[i])):
 			continue
 		else:
 			context_syn(words,i,sentence[i][1])
@@ -98,15 +148,15 @@ def context_syn(words, i, global_key):
 
 	trigramss = trigrams(words, i)
 	filtered_trigrams = trigramss
-	synonym_list = syn(words[i])
+	synonym_list = synonyms(words[i])
 	score = {}
 
-	# for tg, look_word in filtered_trigrams:
-	# 	for candidate in synonym_list:
-	# 		new_tri = tg[:]
-	# 		new_tri[look_word] = candidate
-	# 		string_tri = ' '.join(new_tri)
-	# 		get_freq(string_tri)
+	for tg, look_word in filtered_trigrams:
+		for candidate in synonym_list:
+			new_tri = tg[:]
+			new_tri[look_word] = candidate
+			string_tri = ' '.join(new_tri)
+			get_freq(string_tri)
 
 	for tri, target in filtered_trigrams:
 		freq = {}
@@ -114,10 +164,11 @@ def context_syn(words, i, global_key):
 			new_tri = tri[:]
 			new_tri[target] = candidate
 			string_tri = ' '.join(new_tri)
-			if string_tri in trigram_freq_dict:
-				freq[candidate] = float(trigram_freq_dict[string_tri])
-			else:
-				freq[candidate]=0
+			# if string_tri in trigram_freq_dict:
+			# 	freq[candidate] = get_freq(string_tri)
+			# else:
+			# 	freq[candidate]=0
+			freq[candidate] = trigram_freq[string_tri]
 		total_sum = sum(freq[key] for key in freq)
 		if total_sum == 0:
 			continue
@@ -128,9 +179,28 @@ def context_syn(words, i, global_key):
 			else:
 				score[key] = freq[key]
 	result = sorted(score, key = lambda x: score[x], reverse = True)
-	word_sugg[global_key] = [i.lower() for i in filter(lambda x: (score[x] != 0) and x.lower() != words[i], result)]
+	word_sugg[global_key] = [ii.lower() for ii in filter(lambda x: (score[x] != 0) and x.lower() != words[i], result)]
 	return word_sugg[global_key]
 
+def get_freq(trigram):
+    encoded_query = urllib.parse.quote(trigram)
+    params = {'corpus': 'eng-us', 'query': encoded_query, 'topk': 3}
+    params = '&'.join('{}={}'.format(name, value) for name, value in params.items())
+
+    response = requests.get('https://api.phrasefinder.io/search?' + params)
+
+    assert response.status_code == 200
+
+    response=response.json()
+
+    f = 0
+    trigram_freq[trigram] = f
+    if response:
+    	rest_json = response['phrases']
+    	for i in rest_json:
+    		f += i['mc']
+    		trigram_freq[trigram] = f
+    return f
 
 def trigrams(words, i):
 	res = []
