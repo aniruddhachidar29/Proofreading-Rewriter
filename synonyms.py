@@ -56,6 +56,20 @@ def synonyms(word):
 	if is_verb(word):
 		verb_form = conjugated_alias(word)
 		word = lemma(word)
+	synons = set([l.name() for syn in wordnet.synsets(word) for l in syn.lemmas()]) # if not l.antonyms()
+	if not verb_form:
+		return synons
+	res = []
+	for syn in synons:
+		new_syn = conjugate(syn, verb_form)
+		res.append(new_syn)
+	return set(res)
+
+def synonymss(word):
+	verb_form = None
+	if is_verb(word):
+		verb_form = conjugated_alias(word)
+		word = lemma(word)
 	synonym = synn(word)
 	if not verb_form:
 		return synonym
@@ -170,7 +184,7 @@ def context_syn(words, i, global_key):
 
 	trigramss = trigrams(words, i)
 	filtered_trigrams = trigramss
-	synonym_list = set(synonyms(words[i]))
+	synonym_list = synonyms(words[i])
 	score = {}
 	processes=[]
 

@@ -90,7 +90,7 @@ class BKTree:
                 d = self.distfn(word, pword)
             results = []
             if d <= n:
-                results.append( (d, pword) )
+                results.append( pword )
 
             for i in range(d-n, d+n+1):
                 child = children.get(i)
