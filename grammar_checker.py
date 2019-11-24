@@ -61,8 +61,9 @@ def i_s(p):
     return iss
     pass
 
-articles_list = ['a', 'an', 'the']
-interrogative_words=['why','what','when','which','whose','whom','how','where','that','who']
+determiners_list = ['a', 'an', 'the', 'this', 'that', 'these', 'those', 'all', 'few', 'many', 'much', 'little', 'enough', 'none', 'some', 'more', 'most',
+ 'my', 'mine', 'your', 'yours', 'his', 'her', 'hers', 'its', 'our', 'ours', 'their', 'theirs']
+interrogative_words=['why','what','when','which','whose','whom','how','where','who']
 do_verbs=['do','does','done']
 hv_verbs=['has','have','had']
 be_verbs=['be','are','is','were','was','been','being','am']
@@ -83,10 +84,10 @@ def alters(word,tag):
 	elif(tag[0]=="W"):
 		return interrogative_words
 	elif(s=="DT"):
-		return articles_list
+		return determiners_list
 
 processes = []
-limit = 1.9
+limit = 1.6
 def suggs(list_of_words, indt, tag):
 	if (tag not in ['DT', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ','HVD','HVG','HVN','HVZ','HV','BE','BER','BEZ','BED','BEDZ','BEG','BEM','BEN','DOD','DO','DOZ','WDT','WP$','WPO','WPS','WQL','WRB']):
 		return []
@@ -130,8 +131,8 @@ def suggs(list_of_words, indt, tag):
 def adj_trigrams(list_of_words, indt,tag):
 	res = []
 	if(tag[0:2]=='VB'):
-		pref = list_of_words[max(0, indt - 2) : indt + 2]
-		res.append([pref, len(pref) - 2])
+		pref = list_of_words[max(0, indt - 2) : indt + 1]
+		res.append([pref, len(pref) - 1])
 	else:
 		nbd = list_of_words[max(0, indt - 1) : indt + 2]
 		if(indt+2>len(list_of_words)):
