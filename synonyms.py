@@ -14,12 +14,13 @@ import requests
 import json
 from pattern.en import conjugate, lemma
 from nltk import word_tokenize, pos_tag
+import threading
 
 word = "run"
 synonym = "enemy"
 
-dbfile = open('examplePickle', 'rb')
-trigram_freq_dict = pickle.load(dbfile)
+# dbfile = open('examplePickle', 'rb')
+# trigram_freq_dict = pickle.load(dbfile)
 
 
 iitb_lingo_words=['machau','craxx','infi','scope','lingo','ditch','pain','tum-tum','lukkha','enthu','haga','mugging','farra','ghati','junta','freshie','sophie']
@@ -103,8 +104,19 @@ def final_synonyms(broke_para):
 	global word_sugg
 	global trigram_freq
 	output = {}
+    #inefficient taking 60 sec
+	# for i in range(len(broke_para)):
+	# 	sentence_syms(broke_para[i],output)
+	processes_sentence = []
+    #threading for efficiency
 	for i in range(len(broke_para)):
-		sentence_syms(broke_para[i],output)
+		process = threading.Thread(target=sentence_syms, args=(broke_para[i], output))
+		process.setDaemon(True)
+		process.start()
+		processes_sentence.append(process)
+	for process in processes_sentence:
+		process.join()
+	processes_sentence = []
 	trigram_freq = {}
 	word_sugg = {}
 	return output
@@ -128,11 +140,19 @@ def valid(word):
 def sentence_syms(sentence, output):
 	global word_sugg
 	words = [word for word, i in sentence]
+	processes_word = []
 	for i in range(len(sentence)):
 		if (words[i] == "" or not valid(words[i])):
 			continue
 		else:
-			context_syn(words,i,sentence[i][1])
+			process = threading.Thread(target=context_syn, args=(words, i, sentence[i][1]))
+			process.setDaemon(True)
+			process.start()
+			processes_word.append(process)
+			#context_syn(words,i,sentence[i][1])     inefficient
+	for process in processes_word:
+		process.join()
+	# print("sen")
 	for i in range(len(sentence)):
 		if sentence[i][1] in word_sugg:
 			if word_sugg[sentence[i][1]]:
@@ -140,6 +160,8 @@ def sentence_syms(sentence, output):
 	pass
 
 def context_syn(words, i, global_key):
+	# print('wordbegin')
+
 	global word_sugg
 	global trigram_freq
 	if (words[i] in iitb_lingo_dictionary):
@@ -148,16 +170,26 @@ def context_syn(words, i, global_key):
 
 	trigramss = trigrams(words, i)
 	filtered_trigrams = trigramss
-	synonym_list = synonyms(words[i])
+	synonym_list = set(synonyms(words[i]))
 	score = {}
+	processes=[]
 
 	for tg, look_word in filtered_trigrams:
 		for candidate in synonym_list:
 			new_tri = tg[:]
 			new_tri[look_word] = candidate
+			# print(new_tri)
 			string_tri = ' '.join(new_tri)
-			get_freq(string_tri)
-
+			process = threading.Thread(target=get_freq, args=(string_tri, ))
+			process.setDaemon(True)
+			process.start()
+			processes.append(process)
+			#get_freq(string_tri)
+			# print('triend')
+	# print('end1')
+	for process in processes:
+		process.join()
+	# print('end2')
 	for tri, target in filtered_trigrams:
 		freq = {}
 		for candidate in synonym_list:
@@ -180,6 +212,7 @@ def context_syn(words, i, global_key):
 				score[key] = freq[key]
 	result = sorted(score, key = lambda x: score[x], reverse = True)
 	word_sugg[global_key] = [ii.lower() for ii in filter(lambda x: (score[x] != 0) and x.lower() != words[i], result)]
+	# print('word')
 	return word_sugg[global_key]
 
 def get_freq(trigram):
