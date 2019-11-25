@@ -25,6 +25,10 @@ synonym = "enemy"
 
 iitb_lingo_words=['machau','craxx','infi','scope','lingo','ditch','pain','tum-tum','lukkha','enthu','haga','mugging','farra','ghati','junta','freshie','sophie']
 iitb_lingo_meanings=['rocking','cracked','infinite','scopeless','language','ditch','problem','bus','free','enthusiasm','blundered','studying','FR','local_resident','public','freshmen','sophomore']
+verb_tag_list = ['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']
+form_verb_list = ["inf", "1sg", "2sg", "3sg", "pl", "part","p", "1sgp", "2sgp", "3gp", "ppl", "ppart"]
+pos_tag_lists = ['JJ', 'JJR', 'JJS', 'RB', 'RBR', 'RBS', 'NN', 'NNS', 'NNP', 'NNPS']
+pseudo_verb_list = ['be', 'do', 'have', 'can', 'could', 'may', 'might', 'must', 'shall', 'should', 'will', 'would']
 iitb_lingo_dictionary={}
 for i in range(len(iitb_lingo_words)):
     iitb_lingo_dictionary[iitb_lingo_words[i]]=iitb_lingo_meanings[i]
@@ -38,7 +42,7 @@ def similarity(a,b):
     return s
 
 trigram_freq = {}
-word_sugg = {}
+final_dict = {}
 
 def synn(word):
     synonyms = []
@@ -53,8 +57,8 @@ def synn(word):
 
 def synonyms(word):
 	verb_form = None
-	if is_verb(word):
-		verb_form = conjugated_alias(word)
+	if verb(word):
+		verb_form = verb_ing_ed(word)
 		word = lemma(word)
 	synons = set([l.name() for syn in wordnet.synsets(word) for l in syn.lemmas()]) # if not l.antonyms()
 	if not verb_form:
@@ -67,8 +71,8 @@ def synonyms(word):
 
 def synonymss(word):
 	verb_form = None
-	if is_verb(word):
-		verb_form = conjugated_alias(word)
+	if verb(word):
+		verb_form = verb_ing_ed(word)
 		word = lemma(word)
 	synonym = synn(word)
 	if not verb_form:
@@ -79,21 +83,21 @@ def synonymss(word):
 		res.append(new_syn)
 	return set(res)
 
-def is_verb(word):
-	tag_list = ['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']
-	word_tag = tag_words([word])[0][1]
-	if word_tag in tag_list:
+def verb(word):
+	global verb_tag_list
+	word_tag = pos_tag_list([word])[0][1]
+	if word_tag in verb_tag_list:
 		return True
 	return False
 
-def conjugated_alias(word):
-	possible_aliases = ["inf", "1sg", "2sg", "3sg", "pl", "part","p", "1sgp", "2sgp", "3gp", "ppl", "ppart"]
+def verb_ing_ed(word):
+	global form_verb_list
 	base = lemma(word)
-	for alias in possible_aliases:
+	for alias in form_verb_list:
 		if conjugate(base, alias) == word:
 			return alias
 
-def tag_words(list_of_words):
+def pos_tag_list(list_of_words):
 	tagged_words = pos_tag(list_of_words)
 	return tagged_words
 
@@ -115,46 +119,46 @@ def i_s(p):
     pass
 
 def final_synonyms(broke_para):
-	global word_sugg
+	global final_dict
 	global trigram_freq
 	output = {}
     #inefficient taking 60 sec
 	# for i in range(len(broke_para)):
 	# 	sentence_syms(broke_para[i],output)
-	processes_sentence = []
+	list_of_threads_sentences = []
     #threading for efficiency
 	for i in range(len(broke_para)):
 		process = threading.Thread(target=sentence_syms, args=(broke_para[i], output))
 		process.setDaemon(True)
 		process.start()
-		processes_sentence.append(process)
-	for process in processes_sentence:
+		list_of_threads_sentences.append(process)
+	for process in list_of_threads_sentences:
 		process.join()
-	processes_sentence = []
+	list_of_threads_sentences = []
 	trigram_freq = {}
-	word_sugg = {}
+	final_dict = {}
 	return output
 
 def valid(word):
     if (word.lower() == 'i'):
     	return False
-    tag = tag_words([word])[0][1]
-    tag_list = ['JJ', 'JJR', 'JJS', 'RB', 'RBR', 'RBS', 'NN', 'NNS', 'NNP', 'NNPS']
-    if tag in tag_list:
+    tag = pos_tag_list([word])[0][1]
+    global pos_tag_lists
+    global pseudo_verb_list
+    if tag in pos_tag_lists:
     	return True
-    if is_verb(word):
+    if verb(word):
     	word = lemma(word)
-    	lex_list = ['be', 'do', 'have', 'can', 'could', 'may', 'might', 'must', 'shall', 'should', 'will', 'would']
-    	if word in lex_list:
+    	if word in pseudo_verb_list:
     		return False
     	else:
     		return True
     return False
 
 def sentence_syms(sentence, output):
-	global word_sugg
+	global final_dict
 	words = [word for word, i in sentence]
-	processes_word = []
+	list_of_threads = []
 	for i in range(len(sentence)):
 		if (words[i] == "" or not valid(words[i])):
 			continue
@@ -162,59 +166,59 @@ def sentence_syms(sentence, output):
 			process = threading.Thread(target=context_syn, args=(words, i, sentence[i][1]))
 			process.setDaemon(True)
 			process.start()
-			processes_word.append(process)
+			list_of_threads.append(process)
 			#context_syn(words,i,sentence[i][1])     inefficient
-	for process in processes_word:
+	for process in list_of_threads:
 		process.join()
 	# print("sen")
 	for i in range(len(sentence)):
-		if sentence[i][1] in word_sugg:
-			if word_sugg[sentence[i][1]]:
-				output[sentence[i][1]] = word_sugg[sentence[i][1]]
+		if sentence[i][1] in final_dict:
+			if final_dict[sentence[i][1]]:
+				output[sentence[i][1]] = final_dict[sentence[i][1]]
 	pass
 
 def context_syn(words, i, global_key):
 	# print('wordbegin')
 
-	global word_sugg
+	global final_dict
 	global trigram_freq
 	if (words[i] in iitb_lingo_dictionary):
-		word_sugg[global_key] = [iitb_lingo_dictionary[words[i]]]
-		return word_sugg[global_key]
+		final_dict[global_key] = [iitb_lingo_dictionary[words[i]]]
+		return final_dict[global_key]
 
 	trigramss = trigrams(words, i)
-	filtered_trigrams = trigramss
+	tri_copy = trigramss
 	synonym_list = synonyms(words[i])
 	score = {}
-	processes=[]
+	threads_list=[]
 
-	for tg, look_word in filtered_trigrams:
+	for tg, look_word in tri_copy:
 		for candidate in synonym_list:
 			new_tri = tg[:]
 			new_tri[look_word] = candidate
 			# print(new_tri)
-			string_tri = ' '.join(new_tri)
-			process = threading.Thread(target=get_freq, args=(string_tri, ))
+			api_search = ' '.join(new_tri)
+			process = threading.Thread(target=get_freq, args=(api_search, ))
 			process.setDaemon(True)
 			process.start()
-			processes.append(process)
-			#get_freq(string_tri)
+			threads_list.append(process)
+			#get_freq(api_search)
 			# print('triend')
 	# print('end1')
-	for process in processes:
+	for process in threads_list:
 		process.join()
 	# print('end2')
-	for tri, target in filtered_trigrams:
+	for tri, target in tri_copy:
 		freq = {}
 		for candidate in synonym_list:
 			new_tri = tri[:]
 			new_tri[target] = candidate
-			string_tri = ' '.join(new_tri)
-			# if string_tri in trigram_freq_dict:
-			# 	freq[candidate] = get_freq(string_tri)
+			api_search = ' '.join(new_tri)
+			# if api_search in trigram_freq_dict:
+			# 	freq[candidate] = get_freq(api_search)
 			# else:
 			# 	freq[candidate]=0
-			freq[candidate] = trigram_freq[string_tri]
+			freq[candidate] = trigram_freq[api_search]
 		total_sum = sum(freq[key] for key in freq)
 		if total_sum == 0:
 			continue
@@ -225,9 +229,9 @@ def context_syn(words, i, global_key):
 			else:
 				score[key] = freq[key]
 	result = sorted(score, key = lambda x: score[x], reverse = True)
-	word_sugg[global_key] = [ii.lower() for ii in filter(lambda x: (score[x] != 0) and x.lower() != words[i], result)]
+	final_dict[global_key] = [ii.lower() for ii in filter(lambda x: (score[x] != 0) and x.lower() != words[i], result)]
 	# print('word')
-	return word_sugg[global_key]
+	return final_dict[global_key]
 
 def get_freq(trigram):
     encoded_query = urllib.parse.quote(trigram)
@@ -250,18 +254,18 @@ def get_freq(trigram):
     return f
 
 def trigrams(words, i):
-	res = []
+	tri = []
 	a = words[i - 2 : i + 1]
 	if (len(a) == 3):
-		res.append([a, 2])
+		tri.append([a, 2])
 	a = words[i - 1 : i + 2]
 	if (len(a) == 3):
-		res.append([a, 1])
+		tri.append([a, 1])
 	a = words[i : i + 3]
 	if (len(a) == 3):
-		res.append([a, 0])
+		tri.append([a, 0])
 
-	return res
+	return tri
 
 # define training dat
 # sentences = [['this', 'is', 'the', 'first', 'sentence', 'for', 'word2vec'],
