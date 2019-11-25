@@ -65,6 +65,7 @@ def index(request):
 				pass
 				#print(value)
 			else:
+				print (value)
 				for corword in value:
 					cw = CorWord(word = Word.objects.all()[wordpk-1], corWord = corword)
 					cw.save()
@@ -73,7 +74,7 @@ def index(request):
 
 		gramdict = grammar_check(para)
 		wordpk = 1
-		for key, value in spelldict.items():
+		for key, value in gramdict.items():
 			w = Word.objects.all()[wordpk -1]
 			#print(wordpk)
 			#print(value)
@@ -95,7 +96,7 @@ def index(request):
 
 		syndict = final_synonyms(para)
 		wordpk = 1
-		for key, value in spelldict.items():
+		for key, value in syndict.items():
 			w = Word.objects.all()[wordpk -1]
 			#print(wordpk)
 			#print(value)
@@ -113,8 +114,7 @@ def index(request):
 					cw = CorWord(word = Word.objects.all()[wordpk-1], corWord = corword)
 					cw.save()
 					#print("hi")
-			wordpk = wordpk +1
-
+			wordpk = wordpk +1 	 
 
 
 	all_sentences = Sentence.objects.all()

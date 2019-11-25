@@ -211,7 +211,7 @@ def spell_correction(numbered_sentence,spell_dict):
     
     for word,index in numbered_sentence:
         if(word in stop_words):
-            spell_dict[index]=0
+            spell_dict[index]=[]
         else:
             spell_dict[index]=set(bktree.query(word,1))
 
