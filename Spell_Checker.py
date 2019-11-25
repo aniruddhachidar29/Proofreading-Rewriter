@@ -4,7 +4,9 @@ import time
 # from itertools import imap, ifilter
 import re
 import pickle
-
+from nltk.corpus import stopwords 
+import urllib
+import requests
 from nltk.tokenize import sent_tokenize, word_tokenize
 mistake = "zebr hmework what waiter"
 breaked = word_tokenize(mistake)
@@ -169,11 +171,29 @@ def i_s(p):
     return iss
     pass
 
+def get_freq(trigram):
+    encoded_query = urllib.parse.quote(trigram)
+    params = {'corpus': 'eng-us', 'query': encoded_query, 'topk': 3}
+    params = '&'.join('{}={}'.format(name, value) for name, value in params.items())
+
+    response = requests.get('https://api.phrasefinder.io/search?' + params)
+
+    assert response.status_code == 200
+
+    response=response.json()
+
+    f = 0
+    if response:
+        rest_json = response['phrases']
+        for i in rest_json:
+            f += i['mc']
+    return f
+
 bktree = BKTree(levenshtein2,words1)
 print('start')
 
-def final_spell(numbered_sentences):
-
+def final_spell(para):
+    numbered_sentences=i_s(para)
     spell_dict={}
     l=len(numbered_sentences)
     
@@ -186,14 +206,14 @@ def final_spell(numbered_sentences):
 
     return spell_dict
 
-
+stop_words = set(stopwords.words('english')) 
 def spell_correction(numbered_sentence,spell_dict):
     
     for word,index in numbered_sentence:
-        if(word in words1):
+        if(word in stop_words):
             spell_dict[index]=0
         else:
-            spell_dict[index]=bktree.query(word,1)
+            spell_dict[index]=set(bktree.query(word,1))
 
     return spell_dict
 
