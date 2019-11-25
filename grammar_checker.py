@@ -28,6 +28,8 @@ def grammar_check(para):
 			alternatives = suggs(sentence_string, indt, tagged_sentence[indt][1])
 			if alternatives:
 				final_sugg[sentence[indt][1]] = alternatives
+			else :
+				final_sugg[sentence[indt][1]] = []
 	return final_sugg
 
 trigram_freq = {}
