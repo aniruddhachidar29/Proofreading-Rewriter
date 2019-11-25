@@ -2,6 +2,8 @@ import nltk
 import time
 # from nltk.corpus import words
 # from itertools import imap, ifilter
+import re
+import pickle
 
 from nltk.tokenize import sent_tokenize, word_tokenize
 mistake = "zebr hmework what waiter"
@@ -48,7 +50,10 @@ def levenshtein(s, t):
                levenshtein(s[:-1], t[:-1]) + cost])
     return res
 
-
+global_arr=[]
+c=0
+with open('bktree', 'rb') as f:
+    dist=pickle.load(f)
 
 class BKTree:
     def __init__(self, distfn, words):
@@ -65,7 +70,11 @@ class BKTree:
 
     def _add_word(self, parent, word):
         pword, children = parent
-        d = self.distfn(word, pword)
+        # d = self.distfn(word, pword)
+        global c
+        d=dist[c]
+        c=c+1
+        # global_arr.append(d)
         if d in children:
             self._add_word(children[d], word)
         else:
@@ -81,7 +90,7 @@ class BKTree:
                 d = self.distfn(word, pword)
             results = []
             if d <= n:
-                results.append( (d, pword) )
+                results.append( pword )
 
             for i in range(d-n, d+n+1):
                 child = children.get(i)
@@ -141,16 +150,59 @@ def editDistDP(str1, str2):
 
     return dp[m][n]
 
+breaked = word_tokenize(mistake)
+
+def i_s(p):
+    sentences = re.split('[.,?!]', p);
+    # print(sentences)
+    n = 0
+    iss = []
+    for sentence in sentences:
+        sentence = sentence.lstrip()
+        words = sentence.split(' ')
+        isa = []
+        for word in words:
+            isa.append((word, n))
+            n += 1
+        # print(indexed_sentence)
+        iss.append(isa)
+    return iss
+    pass
 
 bktree = BKTree(levenshtein2,words1)
 print('start')
 
-while(True):
-    a=input()
-    start=time.time()
-    print(bktree.query(a,1))
-    end=time.time()
-    print(end-start)
+def final_spell(numbered_sentences):
+
+    spell_dict={}
+    l=len(numbered_sentences)
+    
+    for i in range(l):
+        s=len(numbered_sentences[i])
+        if(i+1==l and numbered_sentences[i][s-1][1]!=''):
+            continue
+        else:
+            spell_correction(numbered_sentences[i],spell_dict)
+
+    return spell_dict
+
+
+def spell_correction(numbered_sentence,spell_dict):
+    
+    for word,index in numbered_sentence:
+        if(word in words1):
+            spell_dict[index]=0
+        else:
+            spell_dict[index]=bktree.query(word,1)
+
+    return spell_dict
+
+# while(True):
+#     a=input()
+#     start=time.time()
+#     print(bktree.query(a,1))
+#     end=time.time()
+#     print(end-start)
 
 
 # for l in words2:
