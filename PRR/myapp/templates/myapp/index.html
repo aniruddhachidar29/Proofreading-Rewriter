@@ -58,14 +58,29 @@
   <br>
   <br>
   <div class = "container" style = "background-color:rgb(246, 244, 240)">
-    <div class="dropdown">
+    <!--
       {% for s in sent %}
-        <span class="dropbtn">{{ s.sentence }} dsdfd</span>
+    <div class="dropdown">
+        <span class="dropbtn">{{ s.sentence }} 1111111</span>
         <div class="dropdown-content">
         <a href="#">Link 1</a>
         <a href="#">Link 2</a>
         <a href="#">Link 3</a>
         </div>
+      </div>
       {% endfor %}
-    </div>
+      <br-->
+      {% for w in wor %}
+      <div class="dropdown">
+        <span class="dropbtn">{{ w.word }}</span>
+        <div class="dropdown-content">
+          {% for cw in cor %}
+          {% if cw.word.word == w.word %}
+          <a href="#">{{cw.corWord}}</a>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    
   </div>
