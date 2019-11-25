@@ -16,8 +16,9 @@ import urllib
 import requests
 import json
 
-final_sugg = {}
+
 def grammar_check(para):
+	final_sugg = {}
 	sentences = i_s(para)
 	for sentence in sentences:
 		sentence = [(word, index) for word, index in sentence if word != ""]
@@ -61,9 +62,13 @@ def i_s(p):
     return iss
     pass
 
-determiners_list = ['a', 'an', 'the', 'this', 'that', 'these', 'those', 'all', 'few', 'many', 'much', 'little', 'enough', 'none', 'some', 'more', 'most',
- 'my', 'mine', 'your', 'yours', 'his', 'her', 'hers', 'its', 'our', 'ours', 'their', 'theirs']
-interrogative_words=['why','what','when','which','whose','whom','how','where','who']
+articles_list = ['a', 'an', 'the']
+interrogative_words=['why','what','when','which','whose','whom','how','where','who', 'that']
+preposition_list = ['between', 'after', 'at', 'among', 'around', 'above', 'below','before', 'near','by','in', 'on','onto', 'at', 'of', 'off','to', 'with' ]
+demonstratives_list = ['this', 'that', 'these', 'those']
+quantifiers =['all', 'few', 'many', 'much', 'little', 'enough', 'none', 'some', 'more', 'most']
+possesives = ['my', 'mine', 'your', 'yours', 'his', 'her', 'hers', 'its', 'our', 'ours', 'their', 'theirs']
+
 do_verbs=['do','does','done']
 hv_verbs=['has','have','had']
 be_verbs=['be','are','is','were','was','been','being','am']
@@ -84,18 +89,34 @@ def alters(word,tag):
 	elif(tag[0]=="W"):
 		return interrogative_words
 	elif(s=="DT"):
-		return determiners_list
+		ans = []
+		if (word.lower() in articles_list):
+			return articles_list
+		elif (word.lower() in preposition_list):
+			return preposition_list
+		elif (word.lower() in demonstratives_list):
+			return demonstratives_list
+		elif (word.lower() in quantifiers):
+			return quantifiers
+		elif (word.lower() in possesives):
+			return possesives
+		return articles_list
+	elif(s=="IN"):
+		if (word not in preposition_list):
+			return []
+		return preposition_list
 
 processes = []
 limit = 1.6
+
 def suggs(list_of_words, indt, tag):
-	if (tag not in ['DT', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ','HVD','HVG','HVN','HVZ','HV','BE','BER','BEZ','BED','BEDZ','BEG','BEM','BEN','DOD','DO','DOZ','WDT','WP$','WPO','WPS','WQL','WRB']):
+	if (tag not in ['DT','IN', 'VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ','HVD','HVG','HVN','HVZ','HV','BE','BER','BEZ','BED','BEDZ','BEG','BEM','BEN','DOD','DO','DOZ','WDT','WP$','WPO','WPS','WQL','WRB']):
 		return []
 	global processes
 	trigrams = adj_trigrams(list_of_words, indt,tag)
 	alternative_list = alters(list_of_words[indt],tag)
-	score = {}
 
+	score = {}
 	for tri, tloc in trigrams:
 		for repl in alternative_list:
 			new_tri = tri[:]
